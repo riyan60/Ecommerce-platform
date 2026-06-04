@@ -3,4 +3,6 @@ packages:
   - packages/*
   - services/*
 allowBuilds:
+  '@prisma/engines': true
   bcrypt: true
+  prisma: true
