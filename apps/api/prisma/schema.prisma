@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -15,18 +15,11 @@ enum Role {
 
 model User {
   id           String   @id @default(uuid())
-
   name         String
-
   email        String   @unique
-
   password     String
-
   role         Role     @default(CUSTOMER)
-
   isVerified   Boolean  @default(false)
-
   createdAt    DateTime @default(now())
-
   updatedAt    DateTime @updatedAt
 }

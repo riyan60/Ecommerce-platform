@@ -1,15 +1,15 @@
 import dotenv from "dotenv";
 import express from "express";
 
+import routes from "./routes";
+
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("API Running");
-});
+app.use("/api", routes);
 
 const PORT = process.env.PORT || 5000;
 
