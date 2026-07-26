@@ -6,6 +6,8 @@ import {
 } from "./auth.repository";
 
 import { RegisterDtoType } from "./dto/register.dto";
+import { LoginDtoType } from "./dto/login.dto";
+import { generateAccessToken } from "../../utils/jwt";
 
 export const registerUser = async (
   data: RegisterDtoType
@@ -32,4 +34,37 @@ export const registerUser = async (
   const { password, ...safeUser } = user;
 
   return safeUser;
+};
+
+// 👇 Add this below registerUser
+
+export const loginUser = async (
+  data: LoginDtoType
+) => {
+  const user = await findUserByEmail(data.email);
+
+  if (!user) {
+    throw new Error("Invalid email or password");
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    data.password,
+    user.password
+  );
+
+  if (!isPasswordValid) {
+    throw new Error("Invalid email or password");
+  }
+
+  const accessToken = generateAccessToken(
+    user.id,
+    user.role
+  );
+
+  const { password, ...safeUser } = user;
+
+  return {
+    user: safeUser,
+    accessToken,
+  };
 };
