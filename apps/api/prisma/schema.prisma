@@ -22,6 +22,10 @@ model User {
   isVerified   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  cart         Cart?
+
+  orders Order[]
 }
 
 model Category {
@@ -32,5 +36,77 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // products    Product[]
+  products    Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  cartItems CartItem[]
+  orderItems OrderItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int
+
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  userId      String
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  orderId       String
+  productId     String
+  productName   String
+  price         Decimal  @db.Decimal(10, 2)
+  quantity      Int
+
+  order         Order    @relation(fields: [orderId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
 }
