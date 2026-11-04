@@ -1,16 +1,16 @@
+
 import prisma from "../../config/prisma";
 
 import {
-  createOrder,
   getOrdersByUserId,
   getOrderById,
   updateOrderStatus,
 } from "./orders.repository";
 
-import { getCartByUserId, clearCart } from "../cart/cart.repository";
-
+import { getCartByUserId } from "../cart/cart.repository";
 import { UpdateOrderStatusDtoType } from "./dto/update-order.dto";
 
+// CREATE ORDER
 export const createOrderService = async (userId: string) => {
   const cart = await getCartByUserId(userId);
 
@@ -25,17 +25,21 @@ export const createOrderService = async (userId: string) => {
     quantity: item.quantity,
   }));
 
-  const totalAmount = items.reduce(
-    (total, item) => total + item.price * item.quantity,
+  // Calculate total in paise to avoid floating-point accumulation
+  const totalAmountInPaise = items.reduce(
+    (total, item) =>
+      total + Math.round(item.price * 100) * item.quantity,
     0
   );
 
-  // Create the order and clear the cart in one transaction.
+  const totalAmount = (totalAmountInPaise / 100).toFixed(2);
+
+  // Create order and clear cart in one transaction
   const order = await prisma.$transaction(async (tx) => {
     const createdOrder = await tx.order.create({
       data: {
         userId,
-        totalAmount: totalAmount.toFixed(2),
+        totalAmount,
         items: {
           create: items.map((item) => ({
             productId: item.productId,
@@ -51,9 +55,7 @@ export const createOrderService = async (userId: string) => {
     });
 
     await tx.cartItem.deleteMany({
-      where: {
-        cartId: cart.id,
-      },
+      where: { cartId: cart.id },
     });
 
     return createdOrder;
@@ -62,10 +64,12 @@ export const createOrderService = async (userId: string) => {
   return order;
 };
 
+// GET ALL ORDERS FOR LOGGED-IN USER
 export const getMyOrdersService = async (userId: string) => {
   return getOrdersByUserId(userId);
 };
 
+// GET SINGLE ORDER
 export const getMyOrderByIdService = async (
   userId: string,
   orderId: string
@@ -79,6 +83,7 @@ export const getMyOrderByIdService = async (
   return order;
 };
 
+// UPDATE ORDER STATUS
 export const updateOrderStatusService = async (
   orderId: string,
   data: UpdateOrderStatusDtoType
@@ -87,6 +92,23 @@ export const updateOrderStatusService = async (
 
   if (!order) {
     throw new Error("Order not found");
+  }
+
+  const allowedTransitions: Record<string, string[]> = {
+    PENDING: ["CONFIRMED", "CANCELLED"],
+    CONFIRMED: ["PROCESSING", "CANCELLED"],
+    PROCESSING: ["SHIPPED", "CANCELLED"],
+    SHIPPED: ["DELIVERED"],
+    DELIVERED: [],
+    CANCELLED: [],
+  };
+
+  const allowedStatuses = allowedTransitions[order.status] ?? [];
+
+  if (!allowedStatuses.includes(data.status)) {
+    throw new Error(
+      `Cannot change order status from ${order.status} to ${data.status}`
+    );
   }
 
   return updateOrderStatus(orderId, data.status);
