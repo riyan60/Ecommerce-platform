@@ -97,6 +97,8 @@ model Order {
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  payments Payment[]
 }
 
 model OrderItem {
@@ -109,4 +111,36 @@ model OrderItem {
 
   order         Order    @relation(fields: [orderId], references: [id])
   product       Product  @relation(fields: [productId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  orderId           String
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  method            String?
+  failureReason     String?
+
+  order             Order         @relation(fields: [orderId], references: [id])
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique
+  event       String
+  processedAt DateTime @default(now())
 }
