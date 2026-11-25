@@ -1,11 +1,15 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Search, ShoppingCart } from "lucide-react";
 import { getProducts } from "../services/product.service";
 import ProductCard from "../components/products/ProductCard";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function ProductsPage() {
+
+  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("default");
@@ -53,6 +57,24 @@ function ProductsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-5 py-16 lg:px-8">
+      <div className="mb-8 flex items-center justify-between">
+        <Link
+          to="/"
+          className="text-sm font-medium text-gray-500 transition hover:text-blue-600"
+        >
+          ← Back to Home
+        </Link>
+
+        {isAuthenticated && (
+          <Link
+            to="/cart"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+          >
+            <ShoppingCart size={17} />
+            Go to Cart
+          </Link>
+        )}
+      </div>
       <div className="mb-10">
         <p className="text-xs font-semibold tracking-widest text-blue-600">
           OUR COLLECTION

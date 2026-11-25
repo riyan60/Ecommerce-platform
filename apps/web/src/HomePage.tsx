@@ -1,9 +1,7 @@
 
 import {
   ArrowRight,
-  Search,
   ShoppingBag,
-  UserRound,
   Menu,
   Headphones,
   Smartphone,
@@ -19,6 +17,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getProducts } from "./services/product.service";
 import ProductCard from "./components/products/ProductCard";
 import { Link } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import { getCart } from "./services/cart.service";
 
 const categories = [
   { name: "Smartphones", icon: Smartphone },
@@ -28,7 +28,19 @@ const categories = [
   { name: "Cameras", icon: Camera },
 ];
 
-function App() {
+function HomePage() {
+
+  const { isAuthenticated, logout } = useAuth();
+
+  const { data: cart } = useQuery({
+    queryKey: ["cart"],
+    queryFn: getCart,
+    enabled: isAuthenticated,
+  });
+
+  const cartCount =
+    cart?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
+
   const {
     data: products = [],
     isLoading,
@@ -46,41 +58,71 @@ function App() {
       </div>
 
       {/* Navigation */}
+
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
+
           <div className="flex items-center gap-3">
             <button className="md:hidden">
               <Menu size={22} />
             </button>
 
-            <a href="/" className="text-2xl font-black tracking-tight">
+            <Link to="/" className="text-2xl font-black tracking-tight">
               NEXORA<span className="text-blue-600">.</span>
-            </a>
+            </Link>
           </div>
 
           <nav className="hidden items-center gap-9 text-sm font-medium md:flex">
-            <a href="#" className="hover:text-blue-600">Home</a>
+            <Link to="/" className="hover:text-blue-600">Home</Link>
             <Link to="/products" className="hover:text-blue-600">Shop</Link>
             <a href="#categories" className="hover:text-blue-600">Categories</a>
             <a href="#about" className="hover:text-blue-600">About</a>
           </nav>
 
           <div className="flex items-center gap-5">
-            <button aria-label="Search">
-              <Search size={21} />
-            </button>
-            <button aria-label="Account" className="hidden sm:block">
-              <UserRound size={21} />
-            </button>
-            <button aria-label="Shopping cart" className="relative">
-              <ShoppingBag size={21} />
-              <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white">
-                0
-              </span>
-            </button>
+
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/cart"
+                  aria-label={`Shopping cart with ${cartCount} items`}
+                  className="relative"
+                >
+                  <ShoppingBag size={21} />
+
+                  {cartCount > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+
+                <button
+                  onClick={logout}
+                  className="text-sm font-semibold hover:text-blue-600"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-semibold hover:text-blue-600">
+                  Login
+                </Link>
+
+                <Link
+                  to="/register"
+                  className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+
           </div>
         </div>
       </header>
+
 
       {/* Hero */}
       <main>
@@ -325,4 +367,4 @@ function App() {
   );
 }
 
-export default App;
+export default HomePage;

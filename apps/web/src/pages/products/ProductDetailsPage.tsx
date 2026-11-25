@@ -5,9 +5,12 @@ import { getProductById } from "../../services/product.service";
 import { ArrowLeft, ShoppingBag, Truck, ShieldCheck } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addToCart } from "../../services/cart.service";
+import { useState } from "react";
 
 function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
+
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -16,7 +19,7 @@ function ProductDetailsPage() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-      alert("Product added to cart successfully!");
+      setAddedToCart(true);
     },
 
     onError: (error) => {
@@ -88,18 +91,25 @@ function ProductDetailsPage() {
             {product.description ?? "No description available."}
           </p>
 
-          <button
-            type="button"
-            disabled={addToCartMutation.isPending}
-            onClick={() => {
-              console.log("Adding product:", product.id);
-              addToCartMutation.mutate(product.id);
-            }}
-            className="mt-9 flex w-full items-center justify-center gap-3 rounded-full bg-black px-8 py-4 font-semibold text-white transition hover:bg-blue-600 disabled:opacity-50"
-          >
-            <ShoppingBag size={19} />
-            {addToCartMutation.isPending ? "Adding..." : "Add to cart"}
-          </button>
+          {addedToCart ? (
+            <Link
+              to="/cart"
+              className="mt-9 flex w-full items-center justify-center gap-3 rounded-full bg-blue-600 px-8 py-4 font-semibold text-white transition hover:bg-blue-700"
+            >
+              <ShoppingBag size={19} />
+              Go to Cart →
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled={addToCartMutation.isPending}
+              onClick={() => addToCartMutation.mutate(product.id)}
+              className="mt-9 flex w-full items-center justify-center gap-3 rounded-full bg-black px-8 py-4 font-semibold text-white transition hover:bg-blue-600 disabled:opacity-50"
+            >
+              <ShoppingBag size={19} />
+              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+            </button>
+          )}
 
           <div className="mt-8 space-y-5 border-t border-gray-100 pt-7">
             <div className="flex items-center gap-3 text-sm text-gray-500">
